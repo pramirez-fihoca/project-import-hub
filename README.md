@@ -1,4 +1,4 @@
-# Welcome to Inventario Dispositivos Fihoca
+# Welcome to Inventario Dispositivos Fihoca Plus
 
 ## Project info
 

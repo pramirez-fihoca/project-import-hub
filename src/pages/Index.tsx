@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const { user, loading, isAdmin } = useAuth();
@@ -10,9 +10,9 @@ const Index = () => {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        navigate(isAdmin ? '/dashboard' : '/my-devices', { replace: true });
+        navigate(isAdmin ? "/dashboard" : "/my-devices", { replace: true });
       } else {
-        navigate('/auth', { replace: true });
+        navigate("/auth", { replace: true });
       }
     }
   }, [user, loading, isAdmin, navigate]);

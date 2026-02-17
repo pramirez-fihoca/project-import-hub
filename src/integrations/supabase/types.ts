@@ -14,16 +14,267 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accessories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      assets: {
+        Row: {
+          accessories_stock: Json | null
+          assigned_to: string | null
+          assignment_date: string | null
+          brand: string | null
+          created_at: string
+          device_type: Database["public"]["Enums"]["asset_type"]
+          id: number
+          imei: string | null
+          model: string | null
+          needs_renewal: boolean
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          specifications: string | null
+          status: Database["public"]["Enums"]["asset_status"]
+          updated_at: string
+        }
+        Insert: {
+          accessories_stock?: Json | null
+          assigned_to?: string | null
+          assignment_date?: string | null
+          brand?: string | null
+          created_at?: string
+          device_type?: Database["public"]["Enums"]["asset_type"]
+          id?: number
+          imei?: string | null
+          model?: string | null
+          needs_renewal?: boolean
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          specifications?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          updated_at?: string
+        }
+        Update: {
+          accessories_stock?: Json | null
+          assigned_to?: string | null
+          assignment_date?: string | null
+          brand?: string | null
+          created_at?: string
+          device_type?: Database["public"]["Enums"]["asset_type"]
+          id?: number
+          imei?: string | null
+          model?: string | null
+          needs_renewal?: boolean
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          specifications?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assignments: {
+        Row: {
+          asset_id: number | null
+          assigned_date: string
+          client_name: string | null
+          created_at: string
+          employee_email: string | null
+          employee_name: string | null
+          id: number
+          included_accessories: Json | null
+          notes: string | null
+          pdf_document_url: string | null
+          profile_id: number | null
+          return_date: string | null
+          signed: boolean
+          updated_at: string
+        }
+        Insert: {
+          asset_id?: number | null
+          assigned_date?: string
+          client_name?: string | null
+          created_at?: string
+          employee_email?: string | null
+          employee_name?: string | null
+          id?: number
+          included_accessories?: Json | null
+          notes?: string | null
+          pdf_document_url?: string | null
+          profile_id?: number | null
+          return_date?: string | null
+          signed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: number | null
+          assigned_date?: string
+          client_name?: string | null
+          created_at?: string
+          employee_email?: string | null
+          employee_name?: string | null
+          id?: number
+          included_accessories?: Json | null
+          notes?: string | null
+          pdf_document_url?: string | null
+          profile_id?: number | null
+          return_date?: string | null
+          signed?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string
+          full_name: string
+          id: number
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email: string
+          full_name: string
+          id?: number
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string
+          full_name?: string
+          id?: number
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      requests: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          id: string
+          justification: string
+          material_type: string
+          profile_id: string | null
+          request_date: string
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          id?: string
+          justification: string
+          material_type: string
+          profile_id?: string | null
+          request_date?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          id?: string
+          justification?: string
+          material_type?: string
+          profile_id?: string | null
+          request_date?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      asset_status: "stock" | "asignado" | "baja"
+      asset_type:
+        | "portatil"
+        | "movil"
+        | "raton"
+        | "maletin"
+        | "auriculares"
+        | "tablet"
+        | "memoria"
+        | "teclado"
+        | "monitor"
+      request_status: "pendiente" | "aprobado" | "rechazado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +401,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      asset_status: ["stock", "asignado", "baja"],
+      asset_type: [
+        "portatil",
+        "movil",
+        "raton",
+        "maletin",
+        "auriculares",
+        "tablet",
+        "memoria",
+        "teclado",
+        "monitor",
+      ],
+      request_status: ["pendiente", "aprobado", "rechazado"],
+    },
   },
 } as const

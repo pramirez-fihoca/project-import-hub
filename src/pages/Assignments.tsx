@@ -65,6 +65,7 @@ export default function Assignments() {
 
   // List filters
   const [currentPage, setCurrentPage] = useState(1);
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>('all');
   const ITEMS_PER_PAGE = 15;
 
   useEffect(() => {

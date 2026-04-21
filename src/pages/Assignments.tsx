@@ -64,7 +64,6 @@ export default function Assignments() {
   const [assignmentNotes, setAssignmentNotes] = useState('');
 
   // List filters
-  const [statusFilter, setStatusFilter] = useState<'active' | 'historic' | 'all'>('active');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
@@ -306,39 +305,33 @@ export default function Assignments() {
     }
   };
 
-  const filteredAssignments = assignments.filter(a => {
+  const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
+
+  const filteredAvailable = availableAssets.filter(a => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
-      a.asset?.brand.toLowerCase().includes(term) ||
-      a.asset?.model.toLowerCase().includes(term) ||
-      a.asset?.serial_number.toLowerCase().includes(term) ||
-      a.profile?.full_name.toLowerCase().includes(term)
+      a.brand?.toLowerCase().includes(term) ||
+      a.model?.toLowerCase().includes(term) ||
+      a.serial_number?.toLowerCase().includes(term)
     );
   });
 
-  const activeAssignments = filteredAssignments.filter(a => !a.return_date);
-  const historicAssignments = filteredAssignments.filter(a => a.return_date);
-
-  const visibleAssignments =
-    statusFilter === 'active'
-      ? activeAssignments
-      : statusFilter === 'historic'
-      ? historicAssignments
-      : filteredAssignments;
-
-  const totalPages = Math.max(1, Math.ceil(visibleAssignments.length / ITEMS_PER_PAGE));
-  const paginatedAssignments = visibleAssignments.slice(
+  const totalPages = Math.max(1, Math.ceil(filteredAvailable.length / ITEMS_PER_PAGE));
+  const paginatedAvailable = filteredAvailable.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset to page 1 when filter / search changes
+  // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, searchTerm, assignments.length]);
+  }, [searchTerm, availableAssets.length]);
 
-  const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
+  const handleQuickDeliver = (assetId: number) => {
+    setSelectedAsset(String(assetId));
+    setAddDialogOpen(true);
+  };
 
   if (!isAdmin) {
     return <Navigate to="/my-devices" replace />;

@@ -62,6 +62,7 @@ export default function Assignments() {
   const [selectedProfile, setSelectedProfile] = useState<string>('');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [manualEmployeeName, setManualEmployeeName] = useState('');
 
   // List filters
   const [currentPage, setCurrentPage] = useState(1);
@@ -208,16 +209,22 @@ export default function Assignments() {
   };
 
   const handleCreateAssignment = async () => {
-    if (!selectedAsset || !selectedProfile) {
+    if (!selectedAsset || (!selectedProfile && !manualEmployeeName.trim())) {
       toast.error('Selecciona un equipo y un empleado');
       return;
     }
 
     try {
       const asset = assets.find(a => String(a.id) === selectedAsset);
-      const profile = profiles.find(p => String(p.id) === selectedProfile);
-      
-      if (!asset || !profile) return;
+      const profile = selectedProfile === '__manual__'
+        ? null
+        : profiles.find(p => String(p.id) === selectedProfile) || null;
+
+      if (!asset) return;
+      if (!profile && !manualEmployeeName.trim()) return;
+
+      const employeeName = profile?.full_name || manualEmployeeName.trim();
+      const employeeEmail = profile?.email || null;
 
       const assignedDate = new Date().toISOString().split('T')[0];
 
@@ -226,7 +233,9 @@ export default function Assignments() {
         .from('assignments')
         .insert({
           asset_id: asset.id,
-          profile_id: profile.id,
+          profile_id: profile?.id ?? null,
+          employee_name: employeeName,
+          employee_email: employeeEmail,
           assigned_date: assignedDate,
           included_accessories: selectedAccessories as any,
           notes: assignmentNotes || null,
@@ -241,13 +250,19 @@ export default function Assignments() {
         .from('assets')
         .update({ 
           status: 'asignado',
-          assigned_to: profile.email,
+          assigned_to: employeeEmail || employeeName,
           assignment_date: assignedDate
         })
         .eq('id', asset.id);
 
       // Generate PDF
-      const doc = generatePDF(asset, profile, selectedAccessories, assignedDate);
+      const profileForPdf: Profile = profile || ({
+        id: 0,
+        full_name: employeeName,
+        email: employeeEmail || '—',
+        department: null,
+      } as unknown as Profile);
+      const doc = generatePDF(asset, profileForPdf, selectedAccessories, assignedDate);
       const pdfBlob = doc.output('blob');
       const fileName = `entrega_${asset.serial_number}_${Date.now()}.pdf`;
       
@@ -274,6 +289,7 @@ export default function Assignments() {
     setSelectedProfile('');
     setSelectedAccessories([]);
     setAssignmentNotes('');
+    setManualEmployeeName('');
   };
 
   const handleReturnDevice = async (assignment: AssignmentWithDetails) => {
@@ -519,40 +535,64 @@ export default function Assignments() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Equipo a entregar</Label>
-              <Select value={selectedAsset} onValueChange={setSelectedAsset}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un equipo disponible" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableAssets.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No hay equipos disponibles
-                    </SelectItem>
-                  ) : (
-                    availableAssets.map((asset) => (
-                      <SelectItem key={asset.id} value={String(asset.id)}>
-                        {asset.brand} {asset.model} ({asset.serial_number})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              {(() => {
+                const asset = assets.find(a => String(a.id) === selectedAsset);
+                if (!asset) {
+                  return (
+                    <p className="text-sm text-muted-foreground p-3 rounded-md border bg-muted">
+                      No se ha seleccionado ningún equipo
+                    </p>
+                  );
+                }
+                return (
+                  <div className="flex items-center gap-3 p-3 rounded-md border bg-muted">
+                    {asset.device_type === 'portatil' ? (
+                      <Laptop className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <Smartphone className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">{asset.brand} {asset.model}</p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        S/N: {asset.serial_number || '—'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="grid gap-2">
               <Label>Empleado receptor</Label>
-              <Select value={selectedProfile} onValueChange={setSelectedProfile}>
+              <Select
+                value={selectedProfile}
+                onValueChange={(v) => {
+                  setSelectedProfile(v);
+                  if (v !== '__manual__') setManualEmployeeName('');
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un empleado" />
                 </SelectTrigger>
                 <SelectContent>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.id} value={String(profile.id)}>
-                      {profile.full_name} ({profile.department || 'Sin departamento'})
-                    </SelectItem>
-                  ))}
+                  {[...profiles]
+                    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '', 'es'))
+                    .map((profile) => (
+                      <SelectItem key={profile.id} value={String(profile.id)}>
+                        {profile.full_name} ({profile.department || 'Sin departamento'})
+                      </SelectItem>
+                    ))}
+                  <SelectItem value="__manual__">+ Otro empleado (escribir nombre)</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedProfile === '__manual__' && (
+                <Input
+                  placeholder="Nombre del empleado"
+                  value={manualEmployeeName}
+                  onChange={(e) => setManualEmployeeName(e.target.value)}
+                  className="mt-2"
+                />
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -594,7 +634,14 @@ export default function Assignments() {
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateAssignment} disabled={!selectedAsset || !selectedProfile}>
+            <Button
+              onClick={handleCreateAssignment}
+              disabled={
+                !selectedAsset ||
+                !selectedProfile ||
+                (selectedProfile === '__manual__' && !manualEmployeeName.trim())
+              }
+            >
               <Download className="h-4 w-4 mr-2" />
               Crear y Generar PDF
             </Button>

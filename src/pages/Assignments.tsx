@@ -388,6 +388,7 @@ export default function Assignments() {
               <TableHead>Equipo</TableHead>
               <TableHead>Nº Serie</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead>Asignación histórica</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>

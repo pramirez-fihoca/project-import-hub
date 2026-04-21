@@ -152,6 +152,23 @@ export default function PendingDocs() {
     return <Navigate to="/my-devices" replace />;
   }
 
+  const filteredAssignments = pendingAssignments.filter(a => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      a.asset?.brand?.toLowerCase().includes(term) ||
+      a.asset?.model?.toLowerCase().includes(term) ||
+      a.asset?.serial_number?.toLowerCase().includes(term) ||
+      a.profile?.full_name?.toLowerCase().includes(term)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE));
+  const paginatedAssignments = filteredAssignments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}

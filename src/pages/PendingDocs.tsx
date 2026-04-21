@@ -57,6 +57,10 @@ export default function PendingDocs() {
     }
   }, [isAdmin]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, pendingAssignments.length]);
+
   const fetchPendingDocs = async () => {
     try {
       // Fetch assignments without signed documents

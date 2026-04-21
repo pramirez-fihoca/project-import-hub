@@ -2,22 +2,67 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import {
-  Package,
-  Users,
-  AlertTriangle,
+import { 
+  Package, 
+  Users, 
+  AlertTriangle, 
   DollarSign,
   Laptop,
   Smartphone,
   ClipboardList,
-  CheckCircle2,
-  Clock,
-  Wrench,
+  TrendingUp
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { KPIPanel, KPIBigValue, KPIMiniCard, KPIMiniGrid } from '@/components/common/KPIPanel';
 import type { DashboardKPIs, Asset } from '@/lib/supabase-types';
+
+function KPICard({ 
+  title, 
+  value, 
+  description, 
+  icon: Icon, 
+  trend,
+  variant = 'default'
+}: { 
+  title: string; 
+  value: string | number; 
+  description?: string;
+  icon: React.ElementType;
+  trend?: string;
+  variant?: 'default' | 'success' | 'warning' | 'accent';
+}) {
+  const variantStyles = {
+    default: 'bg-primary/10 text-primary',
+    success: 'bg-success/10 text-success',
+    warning: 'bg-warning/10 text-warning',
+    accent: 'bg-accent/10 text-accent',
+  };
+
+  return (
+    <Card className="kpi-card transition-all duration-200">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <div className={`p-2 rounded-lg ${variantStyles[variant]}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && (
+          <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        )}
+        {trend && (
+          <div className="flex items-center mt-2 text-xs text-success">
+            <TrendingUp className="h-3 w-3 mr-1" />
+            {trend}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   const { isAdmin } = useAuth();
@@ -105,77 +150,40 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Resumen del inventario IT</p>
       </div>
 
-      {/* KPI Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <KPIPanel
-          title="Equipos en Stock"
-          icon={Package}
-          color="blue"
-          helpText="Equipos disponibles para asignar"
-        >
-          <KPIBigValue
-            value={kpis.equiposStock}
-            caption="equipos disponibles"
-            color="blue"
-          />
-          <KPIMiniGrid>
-            <KPIMiniCard label="Asignados" value={kpis.equiposAsignados} icon={Users} color="purple" />
-            <KPIMiniCard label="De Baja" value={kpis.equiposBaja} icon={Wrench} color="red" />
-            <KPIMiniCard label="Renovación" value={kpis.equiposRenovacion} icon={Clock} color="orange" />
-          </KPIMiniGrid>
-        </KPIPanel>
-
-        <KPIPanel
-          title="Solicitudes de Material"
-          icon={ClipboardList}
-          color="purple"
-          helpText="Solicitudes realizadas por los empleados"
-        >
-          <div className="flex gap-3 justify-center py-2">
-            <KPIMiniCard
-              label="Pendientes"
-              value={kpis.solicitudesPendientes}
-              icon={Clock}
-              color="orange"
-            />
-            <KPIMiniCard
-              label="Aprobadas"
-              value={0}
-              icon={CheckCircle2}
-              color="green"
-            />
-          </div>
-        </KPIPanel>
-
-        <KPIPanel
-          title="Gasto Anual en Equipos"
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          title="Gasto Anual"
+          value={`€${kpis.gastoTotalAnual.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`}
+          description="Inversión en equipos este año"
           icon={DollarSign}
-          color="green"
-          helpText="Inversión en equipos durante el año en curso"
-        >
-          <KPIBigValue
-            value={`€${kpis.gastoTotalAnual.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-            caption="inversión total este año"
-            color="green"
-          />
-        </KPIPanel>
-
-        <KPIPanel
-          title="Equipos por Renovar"
-          icon={Wrench}
-          color="orange"
-          helpText="Equipos marcados como pendientes de renovación"
-        >
-          <KPIBigValue
-            value={kpis.equiposRenovacion}
-            caption="equipos marcados para renovación"
-            color="orange"
-          />
-        </KPIPanel>
+          variant="accent"
+        />
+        <KPICard
+          title="En Stock"
+          value={kpis.equiposStock}
+          description="Equipos disponibles"
+          icon={Package}
+          variant="success"
+        />
+        <KPICard
+          title="Asignados"
+          value={kpis.equiposAsignados}
+          description="Equipos en uso"
+          icon={Users}
+          variant="default"
+        />
+        <KPICard
+          title="Solicitudes Pendientes"
+          value={kpis.solicitudesPendientes}
+          description="Requieren atención"
+          icon={ClipboardList}
+          variant={kpis.solicitudesPendientes > 0 ? 'warning' : 'default'}
+        />
       </div>
 
       {/* Alerts Section */}

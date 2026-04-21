@@ -3,17 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
   PackageCheck, 
-  UserPlus,
   Loader2,
   ArrowDownToLine,
-  ArrowUpFromLine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
 import { AssetWithDetails } from '@/lib/asset-types';
 
 import { toast } from 'sonner';
@@ -30,12 +27,6 @@ export function AssetAssignmentTab({ asset, onUpdate }: AssetAssignmentTabProps)
   const [currentAssignment, setCurrentAssignment] = useState<AssignmentRecord | null>(null);
   
   const [returnNotes, setReturnNotes] = useState('');
-  const [assignFirstName, setAssignFirstName] = useState('');
-  const [assignLastName, setAssignLastName] = useState('');
-  const [assignEmail, setAssignEmail] = useState('');
-  const [assignDate, setAssignDate] = useState(new Date().toISOString().split('T')[0]);
-  const [assignClient, setAssignClient] = useState('');
-  const [assignNotes, setAssignNotes] = useState('');
 
   useEffect(() => {
     fetchData();

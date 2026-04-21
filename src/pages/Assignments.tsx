@@ -308,6 +308,17 @@ export default function Assignments() {
 
   const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
 
+  // Build history map: asset_id -> list of past holders (most recent first)
+  const assetHistoryMap = new Map<number, string[]>();
+  assignments.forEach(a => {
+    if (!a.asset_id) return;
+    const name = a.profile?.full_name || a.employee_name || a.employee_email;
+    if (!name) return;
+    const list = assetHistoryMap.get(a.asset_id) || [];
+    if (!list.includes(name)) list.push(name);
+    assetHistoryMap.set(a.asset_id, list);
+  });
+
   const filteredAvailable = availableAssets.filter(a => {
     if (deviceTypeFilter !== 'all' && a.device_type !== deviceTypeFilter) return false;
     if (!searchTerm) return true;

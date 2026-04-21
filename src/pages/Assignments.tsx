@@ -338,7 +338,7 @@ export default function Assignments() {
     setCurrentPage(1);
   }, [statusFilter, searchTerm, assignments.length]);
 
-  const availableAssets = assets.filter(a => a.status === 'stock');
+  const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
 
   if (!isAdmin) {
     return <Navigate to="/my-devices" replace />;

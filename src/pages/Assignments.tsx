@@ -308,6 +308,17 @@ export default function Assignments() {
 
   const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
 
+  // Build history map: asset_id -> list of past holders (most recent first)
+  const assetHistoryMap = new Map<number, string[]>();
+  assignments.forEach(a => {
+    if (!a.asset_id) return;
+    const name = a.profile?.full_name || a.employee_name || a.employee_email;
+    if (!name) return;
+    const list = assetHistoryMap.get(a.asset_id) || [];
+    if (!list.includes(name)) list.push(name);
+    assetHistoryMap.set(a.asset_id, list);
+  });
+
   const filteredAvailable = availableAssets.filter(a => {
     if (deviceTypeFilter !== 'all' && a.device_type !== deviceTypeFilter) return false;
     if (!searchTerm) return true;
@@ -388,19 +399,20 @@ export default function Assignments() {
               <TableHead>Equipo</TableHead>
               <TableHead>Nº Serie</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead>Asignación histórica</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Cargando equipos...
                 </TableCell>
               </TableRow>
             ) : filteredAvailable.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No hay equipos disponibles para entregar
                 </TableCell>
               </TableRow>
@@ -428,6 +440,24 @@ export default function Assignments() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">Disponible</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const history = assetHistoryMap.get(asset.id) || [];
+                      if (history.length === 0) {
+                        return <span className="text-sm text-muted-foreground">Sin historial</span>;
+                      }
+                      return (
+                        <div className="text-sm">
+                          <p className="font-medium">{history[0]}</p>
+                          {history.length > 1 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{history.length - 1} anterior{history.length - 1 > 1 ? 'es' : ''}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button

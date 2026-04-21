@@ -238,6 +238,12 @@ export default function Dashboard() {
                     <div>
                       <p className="font-medium">{asset.brand} {asset.model}</p>
                       <p className="text-sm text-muted-foreground">S/N: {asset.serial_number}</p>
+                      {asset.currentAssignee && (
+                        <p className="text-sm text-foreground mt-0.5">
+                          <span className="text-muted-foreground">Asignado a:</span>{' '}
+                          <span className="font-medium">{asset.currentAssignee}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Badge variant="outline" className="badge-pendiente">

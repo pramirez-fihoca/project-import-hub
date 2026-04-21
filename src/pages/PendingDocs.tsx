@@ -187,69 +187,73 @@ export default function PendingDocs() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {pendingAssignments.map((assignment) => {
-            const includedAccessories = (assignment.included_accessories || []) as string[];
-            return (
-              <Card key={assignment.id} className="hover:shadow-card transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
+        <div className="rounded-lg border bg-card shadow-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Equipo</TableHead>
+                <TableHead>Nº Serie</TableHead>
+                <TableHead>Empleado</TableHead>
+                <TableHead>Fecha entrega</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pendingAssignments.map((assignment) => (
+                <TableRow key={assignment.id} className="group">
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       {assignment.asset?.device_type === 'portatil' ? (
-                        <Laptop className="h-5 w-5 text-muted-foreground" />
+                        <Laptop className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <Smartphone className="h-5 w-5 text-muted-foreground" />
+                        <Smartphone className="h-4 w-4 text-muted-foreground" />
                       )}
-                      <div>
-                        <CardTitle className="text-base">
-                          {assignment.asset?.brand} {assignment.asset?.model}
-                        </CardTitle>
-                        <CardDescription className="font-mono text-xs">
-                          S/N: {assignment.asset?.serial_number}
-                        </CardDescription>
-                      </div>
+                      <span className="capitalize">{assignment.asset?.device_type}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{assignment.asset?.brand}</p>
+                      <p className="text-sm text-muted-foreground">{assignment.asset?.model}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {assignment.asset?.serial_number || '—'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>{assignment.profile?.full_name || '—'}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
+                  </TableCell>
+                  <TableCell>
                     <Badge variant="outline" className="badge-pendiente">
                       Pendiente
                     </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{assignment.profile?.full_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      Entregado el{' '}
-                      {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
-                    </span>
-                  </div>
-                  {includedAccessories.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {includedAccessories.map((acc, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {acc}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  <Button
-                    className="w-full mt-2"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedAssignment(assignment);
-                      setUploadDialogOpen(true);
-                    }}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Subir Documento Firmado
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedAssignment(assignment);
+                        setUploadDialogOpen(true);
+                      }}
+                      title="Subir documento firmado"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Subir PDF
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 

@@ -62,6 +62,7 @@ export default function Assignments() {
   const [selectedProfile, setSelectedProfile] = useState<string>('');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [manualEmployeeName, setManualEmployeeName] = useState('');
 
   // List filters
   const [currentPage, setCurrentPage] = useState(1);

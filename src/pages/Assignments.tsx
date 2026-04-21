@@ -65,6 +65,7 @@ export default function Assignments() {
 
   // List filters
   const [currentPage, setCurrentPage] = useState(1);
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState<string>('all');
   const ITEMS_PER_PAGE = 15;
 
   useEffect(() => {
@@ -308,6 +309,7 @@ export default function Assignments() {
   const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
 
   const filteredAvailable = availableAssets.filter(a => {
+    if (deviceTypeFilter !== 'all' && a.device_type !== deviceTypeFilter) return false;
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -326,7 +328,7 @@ export default function Assignments() {
   // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, availableAssets.length]);
+  }, [searchTerm, deviceTypeFilter, availableAssets.length]);
 
   const handleQuickDeliver = (assetId: number) => {
     setSelectedAsset(String(assetId));
@@ -345,10 +347,6 @@ export default function Assignments() {
           <h1 className="text-2xl font-bold">Gestión de Entregas</h1>
           <p className="text-muted-foreground">Asigna equipos a empleados</p>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Entrega
-        </Button>
       </div>
 
       {/* Filters */}
@@ -362,6 +360,23 @@ export default function Assignments() {
             className="pl-10"
           />
         </div>
+        <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Tipo de equipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            <SelectItem value="portatil">Portátil</SelectItem>
+            <SelectItem value="movil">Móvil</SelectItem>
+            <SelectItem value="tablet">Tablet</SelectItem>
+            <SelectItem value="monitor">Monitor</SelectItem>
+            <SelectItem value="teclado">Teclado</SelectItem>
+            <SelectItem value="raton">Ratón</SelectItem>
+            <SelectItem value="auriculares">Auriculares</SelectItem>
+            <SelectItem value="maletin">Maletín</SelectItem>
+            <SelectItem value="memoria">Memoria</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}

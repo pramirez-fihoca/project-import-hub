@@ -16,6 +16,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import type { DashboardKPIs, Asset } from '@/lib/supabase-types';
 
+type RenewalAsset = Asset & { currentAssignee?: string | null };
+
 function KPICard({ 
   title, 
   value, 
@@ -74,7 +76,7 @@ export default function Dashboard() {
     equiposRenovacion: 0,
     solicitudesPendientes: 0,
   });
-  const [renewalAssets, setRenewalAssets] = useState<Asset[]>([]);
+  const [renewalAssets, setRenewalAssets] = useState<RenewalAsset[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,8 +110,30 @@ export default function Dashboard() {
           solicitudesPendientes: 0, // Will update below
         });
 
+        const renewals = (assets as Asset[]).filter(a => a.needs_renewal).slice(0, 5);
+
+        // Fetch active assignments (no return_date) for these assets
+        const renewalIds = renewals.map(a => a.id);
+        let assigneeMap = new Map<number, string>();
+        if (renewalIds.length > 0) {
+          const { data: assignmentsData } = await supabase
+            .from('assignments')
+            .select('asset_id, employee_name, assigned_date')
+            .in('asset_id', renewalIds)
+            .is('return_date', null)
+            .order('assigned_date', { ascending: false });
+
+          if (assignmentsData) {
+            for (const a of assignmentsData) {
+              if (a.asset_id != null && !assigneeMap.has(a.asset_id) && a.employee_name) {
+                assigneeMap.set(a.asset_id, a.employee_name);
+              }
+            }
+          }
+        }
+
         setRenewalAssets(
-          (assets as Asset[]).filter(a => a.needs_renewal).slice(0, 5)
+          renewals.map(a => ({ ...a, currentAssignee: assigneeMap.get(a.id) ?? null }))
         );
       }
 
@@ -214,6 +238,12 @@ export default function Dashboard() {
                     <div>
                       <p className="font-medium">{asset.brand} {asset.model}</p>
                       <p className="text-sm text-muted-foreground">S/N: {asset.serial_number}</p>
+                      {asset.currentAssignee && (
+                        <p className="text-sm text-foreground mt-0.5">
+                          <span className="text-muted-foreground">Asignado a:</span>{' '}
+                          <span className="font-medium">{asset.currentAssignee}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Badge variant="outline" className="badge-pendiente">

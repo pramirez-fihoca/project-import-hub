@@ -289,6 +289,7 @@ export default function Assignments() {
     setSelectedProfile('');
     setSelectedAccessories([]);
     setAssignmentNotes('');
+    setManualEmployeeName('');
   };
 
   const handleReturnDevice = async (assignment: AssignmentWithDetails) => {

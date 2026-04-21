@@ -63,6 +63,11 @@ export default function Assignments() {
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [assignmentNotes, setAssignmentNotes] = useState('');
 
+  // List filters
+  const [statusFilter, setStatusFilter] = useState<'active' | 'historic' | 'all'>('active');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
+
   useEffect(() => {
     if (isAdmin) {
       fetchData();

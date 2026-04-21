@@ -42,8 +42,9 @@ function NavItem({ to, icon: Icon, label }: NavItemProps) {
   return (
     <NavLink
       to={to}
+      end
       className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
         "hover:bg-accent/10 hover:text-accent",
         isActive && "bg-accent/10 text-accent"
       )}
@@ -63,8 +64,9 @@ function MobileNavItem({ to, icon: Icon, label }: NavItemProps) {
   return (
     <NavLink
       to={to}
+      end
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors",
+        "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium whitespace-nowrap transition-colors",
         "hover:bg-muted",
         isActive && "bg-accent/10 text-accent"
       )}

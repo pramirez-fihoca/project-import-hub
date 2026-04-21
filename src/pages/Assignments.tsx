@@ -209,16 +209,22 @@ export default function Assignments() {
   };
 
   const handleCreateAssignment = async () => {
-    if (!selectedAsset || !selectedProfile) {
+    if (!selectedAsset || (!selectedProfile && !manualEmployeeName.trim())) {
       toast.error('Selecciona un equipo y un empleado');
       return;
     }
 
     try {
       const asset = assets.find(a => String(a.id) === selectedAsset);
-      const profile = profiles.find(p => String(p.id) === selectedProfile);
-      
-      if (!asset || !profile) return;
+      const profile = selectedProfile === '__manual__'
+        ? null
+        : profiles.find(p => String(p.id) === selectedProfile) || null;
+
+      if (!asset) return;
+      if (!profile && !manualEmployeeName.trim()) return;
+
+      const employeeName = profile?.full_name || manualEmployeeName.trim();
+      const employeeEmail = profile?.email || null;
 
       const assignedDate = new Date().toISOString().split('T')[0];
 
@@ -227,7 +233,9 @@ export default function Assignments() {
         .from('assignments')
         .insert({
           asset_id: asset.id,
-          profile_id: profile.id,
+          profile_id: profile?.id ?? null,
+          employee_name: employeeName,
+          employee_email: employeeEmail,
           assigned_date: assignedDate,
           included_accessories: selectedAccessories as any,
           notes: assignmentNotes || null,
@@ -242,13 +250,19 @@ export default function Assignments() {
         .from('assets')
         .update({ 
           status: 'asignado',
-          assigned_to: profile.email,
+          assigned_to: employeeEmail || employeeName,
           assignment_date: assignedDate
         })
         .eq('id', asset.id);
 
       // Generate PDF
-      const doc = generatePDF(asset, profile, selectedAccessories, assignedDate);
+      const profileForPdf: Profile = profile || ({
+        id: 0,
+        full_name: employeeName,
+        email: employeeEmail || '—',
+        department: null,
+      } as unknown as Profile);
+      const doc = generatePDF(asset, profileForPdf, selectedAccessories, assignedDate);
       const pdfBlob = doc.output('blob');
       const fileName = `entrega_${asset.serial_number}_${Date.now()}.pdf`;
       

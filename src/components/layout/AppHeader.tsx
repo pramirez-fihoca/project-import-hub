@@ -6,25 +6,16 @@ import {
   Users,
   Laptop,
   LogOut,
-  Menu
+  Menu,
+  X,
+  HelpCircle
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import logoFihoca from '@/assets/logo-fihoca.jpg';
 
 interface NavItemProps {
   to: string;
@@ -32,41 +23,42 @@ interface NavItemProps {
   label: string;
 }
 
-function NavItem({ to, icon: Icon, label }: NavItemProps) {
+function NavItem({ to, icon: Icon, label, onClick }: NavItemProps & { onClick?: () => void }) {
   const location = useLocation();
-  // Support active state for nested routes (e.g., /assets/123)
-  const isActive = to === '/assets' 
+  const isActive = to === '/assets'
     ? location.pathname.startsWith('/assets')
     : location.pathname === to;
 
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-        "hover:bg-accent/10 hover:text-accent",
-        isActive && "bg-accent/10 text-accent"
+        "flex items-center gap-1.5 px-3 h-9 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+        "text-sidebar-foreground hover:bg-sidebar-accent",
+        isActive && "bg-secondary text-secondary-foreground hover:bg-secondary/90"
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-4 w-4 shrink-0" />
       <span>{label}</span>
     </NavLink>
   );
 }
 
-function MobileNavItem({ to, icon: Icon, label }: NavItemProps) {
+function MobileNavItem({ to, icon: Icon, label, onClick }: NavItemProps & { onClick?: () => void }) {
   const location = useLocation();
-  const isActive = to === '/assets' 
+  const isActive = to === '/assets'
     ? location.pathname.startsWith('/assets')
     : location.pathname === to;
 
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       className={cn(
         "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors",
-        "hover:bg-muted",
-        isActive && "bg-accent/10 text-accent"
+        "text-sidebar-foreground hover:bg-sidebar-accent",
+        isActive && "bg-secondary text-secondary-foreground"
       )}
     >
       <Icon className="h-5 w-5" />
@@ -95,85 +87,114 @@ export function AppHeader() {
   const menuItems = isAdmin ? adminMenuItems : userMenuItems;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-soft">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-8 max-w-7xl">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg gradient-accent flex items-center justify-center">
-            <Laptop className="h-5 w-5 text-accent-foreground" />
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="font-semibold text-base text-foreground">Fihoca</h1>
-            <p className="text-xs text-muted-foreground">IT Manager</p>
-          </div>
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-border shadow-sm flex">
+        {/* Left: Logo on white background */}
+        <div className="bg-white flex items-center px-3 sm:px-6 h-16 border-r border-border gap-2 sm:gap-3 shrink-0">
+          <img
+            src={logoFihoca}
+            alt="Fihoca"
+            className="h-7 sm:h-8 w-auto"
+          />
+          <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground whitespace-nowrap">
+            IT MANAGER
+          </span>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          {menuItems.map((item) => (
-            <NavItem
-              key={item.to}
-              to={item.to}
-              icon={item.icon}
-              label={item.label}
-            />
-          ))}
-        </nav>
+        {/* Right: Navigation on burgundy background */}
+        <div className="flex-1 bg-sidebar text-sidebar-foreground h-16 px-2 lg:px-4 flex items-center justify-end min-w-0">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-1 min-w-0 overflow-hidden">
+            {menuItems.map((item) => (
+              <NavItem
+                key={item.to}
+                to={item.to}
+                icon={item.icon}
+                label={item.label}
+              />
+            ))}
+          </nav>
 
-        {/* User Menu & Mobile Toggle */}
-        <div className="flex items-center gap-2">
-          {/* User dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary">
-                    {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-                <span className="hidden sm:inline text-sm font-medium">
-                  {profile?.full_name?.split(' ')[0] || 'Usuario'}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{profile?.full_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {isAdmin ? 'Administrador' : 'Usuario'}
-                </p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar sesión
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Desktop Help & Logout */}
+          <div className="hidden lg:flex items-center gap-1 ml-2 pl-2 border-l border-sidebar-border/50 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground h-9"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Ayuda
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="gap-1.5 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground h-9"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar Sesión
+            </Button>
+          </div>
 
-          {/* Mobile menu */}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <div className="flex flex-col gap-1 mt-6">
-                {menuItems.map((item) => (
-                  <div key={item.to} onClick={() => setMobileOpen(false)}>
-                    <MobileNavItem
-                      to={item.to}
-                      icon={item.icon}
-                      label={item.label}
-                    />
+          {/* Mobile toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="lg:hidden ml-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
+            {mobileOpen ? <X /> : <Menu />}
+          </Button>
+        </div>
+      </header>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="fixed top-16 left-0 right-0 bg-sidebar text-sidebar-foreground z-50 lg:hidden border-b border-border shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <nav className="p-4 space-y-1">
+              {menuItems.map((item) => (
+                <MobileNavItem
+                  key={item.to}
+                  to={item.to}
+                  icon={item.icon}
+                  label={item.label}
+                  onClick={() => setMobileOpen(false)}
+                />
+              ))}
+              <div className="pt-4 mt-4 border-t border-sidebar-border space-y-1">
+                {profile && (
+                  <div className="px-4 py-2 text-sm">
+                    <p className="font-medium">{profile.full_name}</p>
+                    <p className="text-xs text-sidebar-foreground/70">
+                      {isAdmin ? 'Administrador' : 'Usuario'}
+                    </p>
                   </div>
-                ))}
+                )}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                >
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Ayuda
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={signOut}
+                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Cerrar Sesión
+                </Button>
               </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-    </header>
+            </nav>
+          </div>
+        </>
+      )}
+    </>
   );
 }

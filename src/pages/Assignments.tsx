@@ -64,7 +64,6 @@ export default function Assignments() {
   const [assignmentNotes, setAssignmentNotes] = useState('');
 
   // List filters
-  const [statusFilter, setStatusFilter] = useState<'active' | 'historic' | 'all'>('active');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
@@ -306,39 +305,33 @@ export default function Assignments() {
     }
   };
 
-  const filteredAssignments = assignments.filter(a => {
+  const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
+
+  const filteredAvailable = availableAssets.filter(a => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
-      a.asset?.brand.toLowerCase().includes(term) ||
-      a.asset?.model.toLowerCase().includes(term) ||
-      a.asset?.serial_number.toLowerCase().includes(term) ||
-      a.profile?.full_name.toLowerCase().includes(term)
+      a.brand?.toLowerCase().includes(term) ||
+      a.model?.toLowerCase().includes(term) ||
+      a.serial_number?.toLowerCase().includes(term)
     );
   });
 
-  const activeAssignments = filteredAssignments.filter(a => !a.return_date);
-  const historicAssignments = filteredAssignments.filter(a => a.return_date);
-
-  const visibleAssignments =
-    statusFilter === 'active'
-      ? activeAssignments
-      : statusFilter === 'historic'
-      ? historicAssignments
-      : filteredAssignments;
-
-  const totalPages = Math.max(1, Math.ceil(visibleAssignments.length / ITEMS_PER_PAGE));
-  const paginatedAssignments = visibleAssignments.slice(
+  const totalPages = Math.max(1, Math.ceil(filteredAvailable.length / ITEMS_PER_PAGE));
+  const paginatedAvailable = filteredAvailable.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset to page 1 when filter / search changes
+  // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, searchTerm, assignments.length]);
+  }, [searchTerm, availableAssets.length]);
 
-  const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
+  const handleQuickDeliver = (assetId: number) => {
+    setSelectedAsset(String(assetId));
+    setAddDialogOpen(true);
+  };
 
   if (!isAdmin) {
     return <Navigate to="/my-devices" replace />;
@@ -363,22 +356,12 @@ export default function Assignments() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por equipo o empleado..."
+            placeholder="Buscar por marca, modelo o nº de serie..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Activas</SelectItem>
-            <SelectItem value="historic">Históricas</SelectItem>
-            <SelectItem value="all">Todas</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Table */}
@@ -389,9 +372,6 @@ export default function Assignments() {
               <TableHead>Tipo</TableHead>
               <TableHead>Equipo</TableHead>
               <TableHead>Nº Serie</TableHead>
-              <TableHead>Empleado</TableHead>
-              <TableHead>F. Entrega</TableHead>
-              <TableHead>F. Devolución</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -399,87 +379,64 @@ export default function Assignments() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  Cargando entregas...
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  Cargando equipos...
                 </TableCell>
               </TableRow>
-            ) : visibleAssignments.length === 0 ? (
+            ) : filteredAvailable.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  No se encontraron entregas
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No hay equipos disponibles para entregar
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedAssignments.map((assignment) => {
-                const isActive = !assignment.return_date;
-                return (
-                  <TableRow key={assignment.id} className="group">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {assignment.asset?.device_type === 'portatil' ? (
-                          <Laptop className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <span className="capitalize">{assignment.asset?.device_type || '—'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{assignment.asset?.brand}</p>
-                        <p className="text-sm text-muted-foreground">{assignment.asset?.model}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {assignment.asset?.serial_number || '—'}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {assignment.profile?.full_name || assignment.employee_name || '—'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {assignment.return_date
-                        ? new Date(assignment.return_date).toLocaleDateString('es-ES')
-                        : <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell>
-                      {isActive ? (
-                        <Badge variant="outline" className={!assignment.signed ? 'badge-pendiente' : ''}>
-                          {assignment.signed ? 'Activa' : 'Sin firmar'}
-                        </Badge>
+              paginatedAvailable.map((asset) => (
+                <TableRow key={asset.id} className="group">
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {asset.device_type === 'portatil' ? (
+                        <Laptop className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <Badge variant="outline">Devuelta</Badge>
+                        <Smartphone className="h-4 w-4 text-muted-foreground" />
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isActive && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleReturnDevice(assignment)}
-                          title="Registrar devolución"
-                        >
-                          <PackageCheck className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                      <span className="capitalize">{asset.device_type}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{asset.brand}</p>
+                      <p className="text-sm text-muted-foreground">{asset.model}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {asset.serial_number || '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">Disponible</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleQuickDeliver(asset.id)}
+                      title="Entregar equipo"
+                    >
+                      <PackageCheck className="h-4 w-4 mr-2" />
+                      Entregar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
       </div>
 
       {/* Pagination */}
-      {visibleAssignments.length > ITEMS_PER_PAGE && (
+      {filteredAvailable.length > ITEMS_PER_PAGE && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, visibleAssignments.length)} de {visibleAssignments.length} entregas
+            Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAvailable.length)} de {filteredAvailable.length} equipos
           </span>
           <div className="flex items-center gap-2">
             <Button

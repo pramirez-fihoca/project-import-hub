@@ -535,40 +535,64 @@ export default function Assignments() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Equipo a entregar</Label>
-              <Select value={selectedAsset} onValueChange={setSelectedAsset}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un equipo disponible" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableAssets.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No hay equipos disponibles
-                    </SelectItem>
-                  ) : (
-                    availableAssets.map((asset) => (
-                      <SelectItem key={asset.id} value={String(asset.id)}>
-                        {asset.brand} {asset.model} ({asset.serial_number})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              {(() => {
+                const asset = assets.find(a => String(a.id) === selectedAsset);
+                if (!asset) {
+                  return (
+                    <p className="text-sm text-muted-foreground p-3 rounded-md border bg-muted">
+                      No se ha seleccionado ningún equipo
+                    </p>
+                  );
+                }
+                return (
+                  <div className="flex items-center gap-3 p-3 rounded-md border bg-muted">
+                    {asset.device_type === 'portatil' ? (
+                      <Laptop className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <Smartphone className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">{asset.brand} {asset.model}</p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        S/N: {asset.serial_number || '—'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="grid gap-2">
               <Label>Empleado receptor</Label>
-              <Select value={selectedProfile} onValueChange={setSelectedProfile}>
+              <Select
+                value={selectedProfile}
+                onValueChange={(v) => {
+                  setSelectedProfile(v);
+                  if (v !== '__manual__') setManualEmployeeName('');
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un empleado" />
                 </SelectTrigger>
                 <SelectContent>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.id} value={String(profile.id)}>
-                      {profile.full_name} ({profile.department || 'Sin departamento'})
-                    </SelectItem>
-                  ))}
+                  {[...profiles]
+                    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '', 'es'))
+                    .map((profile) => (
+                      <SelectItem key={profile.id} value={String(profile.id)}>
+                        {profile.full_name} ({profile.department || 'Sin departamento'})
+                      </SelectItem>
+                    ))}
+                  <SelectItem value="__manual__">+ Otro empleado (escribir nombre)</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedProfile === '__manual__' && (
+                <Input
+                  placeholder="Nombre del empleado"
+                  value={manualEmployeeName}
+                  onChange={(e) => setManualEmployeeName(e.target.value)}
+                  className="mt-2"
+                />
+              )}
             </div>
 
             <div className="grid gap-2">

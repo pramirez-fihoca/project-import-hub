@@ -634,7 +634,14 @@ export default function Assignments() {
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateAssignment} disabled={!selectedAsset || !selectedProfile}>
+            <Button
+              onClick={handleCreateAssignment}
+              disabled={
+                !selectedAsset ||
+                !selectedProfile ||
+                (selectedProfile === '__manual__' && !manualEmployeeName.trim())
+              }
+            >
               <Download className="h-4 w-4 mr-2" />
               Crear y Generar PDF
             </Button>

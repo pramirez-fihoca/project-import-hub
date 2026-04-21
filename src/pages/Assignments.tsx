@@ -346,10 +346,6 @@ export default function Assignments() {
           <h1 className="text-2xl font-bold">Gestión de Entregas</h1>
           <p className="text-muted-foreground">Asigna equipos a empleados</p>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Entrega
-        </Button>
       </div>
 
       {/* Filters */}
@@ -363,6 +359,23 @@ export default function Assignments() {
             className="pl-10"
           />
         </div>
+        <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Tipo de equipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            <SelectItem value="portatil">Portátil</SelectItem>
+            <SelectItem value="movil">Móvil</SelectItem>
+            <SelectItem value="tablet">Tablet</SelectItem>
+            <SelectItem value="monitor">Monitor</SelectItem>
+            <SelectItem value="teclado">Teclado</SelectItem>
+            <SelectItem value="raton">Ratón</SelectItem>
+            <SelectItem value="auriculares">Auriculares</SelectItem>
+            <SelectItem value="maletin">Maletín</SelectItem>
+            <SelectItem value="memoria">Memoria</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}

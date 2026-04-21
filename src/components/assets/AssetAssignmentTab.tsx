@@ -91,66 +91,6 @@ export function AssetAssignmentTab({ asset, onUpdate }: AssetAssignmentTabProps)
     }
   };
 
-  const handleAssign = async () => {
-    if (!assignFirstName || !assignLastName || !assignEmail || !assignDate) {
-      toast.error('Completa todos los campos obligatorios');
-      return;
-    }
-    setSaving(true);
-    try {
-      const fullName = `${assignFirstName.trim()} ${assignLastName.trim()}`;
-
-      // Optionally look up profile by email
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', assignEmail.trim())
-        .maybeSingle();
-
-      // 1. Create assignment record
-      const { error: assignmentError } = await supabase
-        .from('assignments')
-        .insert({
-          asset_id: asset.id,
-          profile_id: profile?.id || null,
-          assigned_date: assignDate,
-          notes: assignNotes || null,
-          employee_name: fullName,
-          employee_email: assignEmail.trim(),
-          client_name: assignClient.trim() || null,
-        });
-
-      if (assignmentError) throw assignmentError;
-
-      // 2. Update asset status
-      const { error: assetError } = await supabase
-        .from('assets')
-        .update({ 
-          status: 'asignado', 
-          assigned_to: assignEmail.trim(),
-          assignment_date: assignDate
-        })
-        .eq('id', asset.id);
-
-      if (assetError) throw assetError;
-
-      toast.success(`Dispositivo asignado a ${fullName}`);
-      setAssignFirstName('');
-      setAssignLastName('');
-      setAssignEmail('');
-      setAssignDate(new Date().toISOString().split('T')[0]);
-      setAssignClient('');
-      setAssignNotes('');
-      onUpdate();
-      fetchData();
-    } catch (error) {
-      console.error('Error assigning device:', error);
-      toast.error('Error al asignar el dispositivo');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">

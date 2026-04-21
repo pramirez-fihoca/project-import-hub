@@ -10,7 +10,10 @@ import {
   User,
   Calendar,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,12 +47,19 @@ export default function PendingDocs() {
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentWithDetails | null>(null);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   useEffect(() => {
     if (isAdmin) {
       fetchPendingDocs();
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, pendingAssignments.length]);
 
   const fetchPendingDocs = async () => {
     try {
@@ -146,6 +156,23 @@ export default function PendingDocs() {
     return <Navigate to="/my-devices" replace />;
   }
 
+  const filteredAssignments = pendingAssignments.filter(a => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      a.asset?.brand?.toLowerCase().includes(term) ||
+      a.asset?.model?.toLowerCase().includes(term) ||
+      a.asset?.serial_number?.toLowerCase().includes(term) ||
+      a.profile?.full_name?.toLowerCase().includes(term)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / ITEMS_PER_PAGE));
+  const paginatedAssignments = filteredAssignments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -168,6 +195,19 @@ export default function PendingDocs() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Search */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por marca, modelo, nº de serie o empleado..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
 
       {/* Pending List */}
       {loading ? (
@@ -201,7 +241,7 @@ export default function PendingDocs() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pendingAssignments.map((assignment) => (
+              {paginatedAssignments.map((assignment) => (
                 <TableRow key={assignment.id} className="group">
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -254,6 +294,36 @@ export default function PendingDocs() {
               ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filteredAssignments.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAssignments.length)} de {filteredAssignments.length} entregas
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 

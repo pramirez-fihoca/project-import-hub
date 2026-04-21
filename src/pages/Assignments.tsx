@@ -320,6 +320,24 @@ export default function Assignments() {
   const activeAssignments = filteredAssignments.filter(a => !a.return_date);
   const historicAssignments = filteredAssignments.filter(a => a.return_date);
 
+  const visibleAssignments =
+    statusFilter === 'active'
+      ? activeAssignments
+      : statusFilter === 'historic'
+      ? historicAssignments
+      : filteredAssignments;
+
+  const totalPages = Math.max(1, Math.ceil(visibleAssignments.length / ITEMS_PER_PAGE));
+  const paginatedAssignments = visibleAssignments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filter / search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm, assignments.length]);
+
   const availableAssets = assets.filter(a => a.status === 'stock');
 
   if (!isAdmin) {

@@ -241,7 +241,7 @@ export default function PendingDocs() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pendingAssignments.map((assignment) => (
+              {paginatedAssignments.map((assignment) => (
                 <TableRow key={assignment.id} className="group">
                   <TableCell>
                     <div className="flex items-center gap-2">

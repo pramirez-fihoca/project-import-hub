@@ -309,6 +309,7 @@ export default function Assignments() {
   const availableAssets = assets.filter(a => a.status === 'stock' && !a.assigned_to);
 
   const filteredAvailable = availableAssets.filter(a => {
+    if (deviceTypeFilter !== 'all' && a.device_type !== deviceTypeFilter) return false;
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -327,7 +328,7 @@ export default function Assignments() {
   // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, availableAssets.length]);
+  }, [searchTerm, deviceTypeFilter, availableAssets.length]);
 
   const handleQuickDeliver = (assetId: number) => {
     setSelectedAsset(String(assetId));

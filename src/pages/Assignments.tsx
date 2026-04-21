@@ -9,14 +9,22 @@ import {
   Download,
   Laptop,
   Smartphone,
-  Calendar,
-  User,
-  PackageCheck
+  PackageCheck,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +62,11 @@ export default function Assignments() {
   const [selectedProfile, setSelectedProfile] = useState<string>('');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [assignmentNotes, setAssignmentNotes] = useState('');
+
+  // List filters
+  const [statusFilter, setStatusFilter] = useState<'active' | 'historic' | 'all'>('active');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   useEffect(() => {
     if (isAdmin) {
@@ -307,6 +320,24 @@ export default function Assignments() {
   const activeAssignments = filteredAssignments.filter(a => !a.return_date);
   const historicAssignments = filteredAssignments.filter(a => a.return_date);
 
+  const visibleAssignments =
+    statusFilter === 'active'
+      ? activeAssignments
+      : statusFilter === 'historic'
+      ? historicAssignments
+      : filteredAssignments;
+
+  const totalPages = Math.max(1, Math.ceil(visibleAssignments.length / ITEMS_PER_PAGE));
+  const paginatedAssignments = visibleAssignments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filter / search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm, assignments.length]);
+
   const availableAssets = assets.filter(a => a.status === 'stock');
 
   if (!isAdmin) {
@@ -327,132 +358,149 @@ export default function Assignments() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por equipo o empleado..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 max-w-md"
-        />
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por equipo o empleado..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Activas</SelectItem>
+            <SelectItem value="historic">Históricas</SelectItem>
+            <SelectItem value="all">Todas</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Active Assignments */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Asignaciones Activas</h2>
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
-            ))}
-          </div>
-        ) : activeAssignments.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No hay asignaciones activas
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeAssignments.map((assignment) => {
-              const includedAccessories = (assignment.included_accessories || []) as string[];
-              return (
-                <Card key={assignment.id} className="hover:shadow-card transition-shadow">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
+      {/* Table */}
+      <div className="rounded-lg border bg-card shadow-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Equipo</TableHead>
+              <TableHead>Nº Serie</TableHead>
+              <TableHead>Empleado</TableHead>
+              <TableHead>F. Entrega</TableHead>
+              <TableHead>F. Devolución</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  Cargando entregas...
+                </TableCell>
+              </TableRow>
+            ) : visibleAssignments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  No se encontraron entregas
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedAssignments.map((assignment) => {
+                const isActive = !assignment.return_date;
+                return (
+                  <TableRow key={assignment.id} className="group">
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         {assignment.asset?.device_type === 'portatil' ? (
-                          <Laptop className="h-5 w-5 text-muted-foreground" />
+                          <Laptop className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <Smartphone className="h-5 w-5 text-muted-foreground" />
+                          <Smartphone className="h-4 w-4 text-muted-foreground" />
                         )}
-                        <div>
-                          <CardTitle className="text-base">
-                            {assignment.asset?.brand} {assignment.asset?.model}
-                          </CardTitle>
-                          <CardDescription className="font-mono text-xs">
-                            S/N: {assignment.asset?.serial_number}
-                          </CardDescription>
-                        </div>
+                        <span className="capitalize">{assignment.asset?.device_type || '—'}</span>
                       </div>
-                      {!assignment.signed && (
-                        <Badge variant="outline" className="badge-pendiente">
-                          Sin firmar
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{assignment.profile?.full_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{assignment.asset?.brand}</p>
+                        <p className="text-sm text-muted-foreground">{assignment.asset?.model}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {assignment.asset?.serial_number || '—'}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">
+                        {assignment.profile?.full_name || assignment.employee_name || '—'}
                       </span>
-                    </div>
-                    {includedAccessories.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {includedAccessories.map((acc, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
-                            {acc}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full mt-2"
-                      onClick={() => handleReturnDevice(assignment)}
-                    >
-                      <PackageCheck className="h-4 w-4 mr-2" />
-                      Registrar Devolución
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(assignment.assigned_date).toLocaleDateString('es-ES')}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {assignment.return_date
+                        ? new Date(assignment.return_date).toLocaleDateString('es-ES')
+                        : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell>
+                      {isActive ? (
+                        <Badge variant="outline" className={!assignment.signed ? 'badge-pendiente' : ''}>
+                          {assignment.signed ? 'Activa' : 'Sin firmar'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Devuelta</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {isActive && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReturnDevice(assignment)}
+                          title="Registrar devolución"
+                        >
+                          <PackageCheck className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Historic Assignments */}
-      {historicAssignments.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Histórico de Entregas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {historicAssignments.map((assignment) => (
-              <Card key={assignment.id} className="opacity-75">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    {assignment.asset?.device_type === 'portatil' ? (
-                      <Laptop className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <Smartphone className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <div>
-                      <CardTitle className="text-base">
-                        {assignment.asset?.brand} {assignment.asset?.model}
-                      </CardTitle>
-                      <CardDescription className="font-mono text-xs">
-                        S/N: {assignment.asset?.serial_number}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>{assignment.profile?.full_name}</p>
-                  <p>
-                    {new Date(assignment.assigned_date).toLocaleDateString('es-ES')} → {' '}
-                    {new Date(assignment.return_date!).toLocaleDateString('es-ES')}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+      {/* Pagination */}
+      {visibleAssignments.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, visibleAssignments.length)} de {visibleAssignments.length} entregas
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}

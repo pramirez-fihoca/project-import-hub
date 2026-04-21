@@ -3,17 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
   PackageCheck, 
-  UserPlus,
   Loader2,
   ArrowDownToLine,
-  ArrowUpFromLine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
 import { AssetWithDetails } from '@/lib/asset-types';
 
 import { toast } from 'sonner';
@@ -30,12 +27,6 @@ export function AssetAssignmentTab({ asset, onUpdate }: AssetAssignmentTabProps)
   const [currentAssignment, setCurrentAssignment] = useState<AssignmentRecord | null>(null);
   
   const [returnNotes, setReturnNotes] = useState('');
-  const [assignFirstName, setAssignFirstName] = useState('');
-  const [assignLastName, setAssignLastName] = useState('');
-  const [assignEmail, setAssignEmail] = useState('');
-  const [assignDate, setAssignDate] = useState(new Date().toISOString().split('T')[0]);
-  const [assignClient, setAssignClient] = useState('');
-  const [assignNotes, setAssignNotes] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -100,66 +91,6 @@ export function AssetAssignmentTab({ asset, onUpdate }: AssetAssignmentTabProps)
     }
   };
 
-  const handleAssign = async () => {
-    if (!assignFirstName || !assignLastName || !assignEmail || !assignDate) {
-      toast.error('Completa todos los campos obligatorios');
-      return;
-    }
-    setSaving(true);
-    try {
-      const fullName = `${assignFirstName.trim()} ${assignLastName.trim()}`;
-
-      // Optionally look up profile by email
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', assignEmail.trim())
-        .maybeSingle();
-
-      // 1. Create assignment record
-      const { error: assignmentError } = await supabase
-        .from('assignments')
-        .insert({
-          asset_id: asset.id,
-          profile_id: profile?.id || null,
-          assigned_date: assignDate,
-          notes: assignNotes || null,
-          employee_name: fullName,
-          employee_email: assignEmail.trim(),
-          client_name: assignClient.trim() || null,
-        });
-
-      if (assignmentError) throw assignmentError;
-
-      // 2. Update asset status
-      const { error: assetError } = await supabase
-        .from('assets')
-        .update({ 
-          status: 'asignado', 
-          assigned_to: assignEmail.trim(),
-          assignment_date: assignDate
-        })
-        .eq('id', asset.id);
-
-      if (assetError) throw assetError;
-
-      toast.success(`Dispositivo asignado a ${fullName}`);
-      setAssignFirstName('');
-      setAssignLastName('');
-      setAssignEmail('');
-      setAssignDate(new Date().toISOString().split('T')[0]);
-      setAssignClient('');
-      setAssignNotes('');
-      onUpdate();
-      fetchData();
-    } catch (error) {
-      console.error('Error assigning device:', error);
-      toast.error('Error al asignar el dispositivo');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -169,10 +100,9 @@ export function AssetAssignmentTab({ asset, onUpdate }: AssetAssignmentTabProps)
   }
 
   const isAssigned = !!currentAssignment;
-  const isInStock = asset.status === 'stock';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="max-w-2xl">
       {/* Current Custody Status */}
       <Card className="shadow-card">
         <CardHeader>
@@ -240,115 +170,10 @@ export function AssetAssignmentTab({ asset, onUpdate }: AssetAssignmentTabProps)
               <PackageCheck className="h-4 w-4 text-success" />
               <AlertTitle className="text-success">En Stock</AlertTitle>
               <AlertDescription>
-                Este dispositivo no está asignado a ningún empleado y está disponible para nueva asignación.
+                Este dispositivo no está asignado a ningún empleado. Para asignarlo a un empleado, ve a la sección <strong>Entregas</strong> y crea una nueva entrega seleccionando un equipo en stock.
               </AlertDescription>
             </Alert>
           )}
-        </CardContent>
-      </Card>
-
-      {/* New Assignment */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Nueva Asignación
-          </CardTitle>
-          <CardDescription>
-            {isAssigned 
-              ? 'Primero debes registrar la devolución del custodio actual'
-              : 'Asigna este dispositivo a un empleado'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isAssigned && (
-            <Alert>
-              <ArrowUpFromLine className="h-4 w-4" />
-              <AlertTitle>Dispositivo en custodia</AlertTitle>
-              <AlertDescription>
-                Para asignar a un nuevo empleado, primero registra la devolución de <strong>{currentAssignment?.profile?.full_name}</strong>.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="assign_first_name">Nombre *</Label>
-              <Input
-                id="assign_first_name"
-                value={assignFirstName}
-                onChange={(e) => setAssignFirstName(e.target.value)}
-                placeholder="Nombre"
-                disabled={isAssigned}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="assign_last_name">Apellido *</Label>
-              <Input
-                id="assign_last_name"
-                value={assignLastName}
-                onChange={(e) => setAssignLastName(e.target.value)}
-                placeholder="Apellido"
-                disabled={isAssigned}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="assign_email">Email Corporativo *</Label>
-            <Input
-              id="assign_email"
-              type="email"
-              value={assignEmail}
-              onChange={(e) => setAssignEmail(e.target.value)}
-              placeholder="usuario@empresa.com"
-              disabled={isAssigned}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="assign_date">Fecha de Asignación *</Label>
-            <Input
-              id="assign_date"
-              type="date"
-              value={assignDate}
-              onChange={(e) => setAssignDate(e.target.value)}
-              disabled={isAssigned}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="assign_client">Cliente / Ubicación</Label>
-            <Input
-              id="assign_client"
-              value={assignClient}
-              onChange={(e) => setAssignClient(e.target.value)}
-              placeholder="Nombre del cliente o ubicación"
-              disabled={isAssigned}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="assign_notes">Notas de entrega</Label>
-            <Textarea
-              id="assign_notes"
-              value={assignNotes}
-              onChange={(e) => setAssignNotes(e.target.value)}
-              placeholder="Observaciones, accesorios incluidos..."
-              rows={3}
-              disabled={isAssigned}
-            />
-          </div>
-
-          <Button 
-            onClick={handleAssign} 
-            disabled={saving || isAssigned || !assignFirstName || !assignLastName || !assignEmail || !assignDate}
-            className="w-full"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            {saving ? 'Asignando...' : 'Asignar Dispositivo'}
-          </Button>
         </CardContent>
       </Card>
     </div>

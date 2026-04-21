@@ -406,13 +406,13 @@ export default function Assignments() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Cargando equipos...
                 </TableCell>
               </TableRow>
             ) : filteredAvailable.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No hay equipos disponibles para entregar
                 </TableCell>
               </TableRow>
@@ -440,6 +440,24 @@ export default function Assignments() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">Disponible</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const history = assetHistoryMap.get(asset.id) || [];
+                      if (history.length === 0) {
+                        return <span className="text-sm text-muted-foreground">Sin historial</span>;
+                      }
+                      return (
+                        <div className="text-sm">
+                          <p className="font-medium">{history[0]}</p>
+                          {history.length > 1 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{history.length - 1} anterior{history.length - 1 > 1 ? 'es' : ''}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
